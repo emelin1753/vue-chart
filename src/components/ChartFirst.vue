@@ -1,5 +1,5 @@
 <template>
-  <Bar :data="data" :options="options" />
+  <Bar :data="chartData" :options="options" />
 </template>
 
 <script>
@@ -23,41 +23,58 @@ ChartJS.register(
   Legend
 );
 
+const chartUrl = "https://service-apm.ru/test_json.php";
+const paramsFetch = {
+  method: "GET", // HTTP request method
+  referrerPolicy: "no-referrer",
+  headers: {},
+  credentials: "same-origin",
+};
+const timeout = 10000;
+
 export default {
   name: "ChartFirst",
   components: { Bar },
+
   data: () => ({
-    data: {
-      labels: [...Array(7).keys()],
-      datasets: [
-        {
-          label: "ChartFirst",
-          data: [65, 59, 80, 81, 56, 55, 40],
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(255, 159, 64, 0.2)",
-            "rgba(255, 205, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-            "rgba(201, 203, 207, 0.2)",
-          ],
-          borderColor: [
-            "rgb(255, 99, 132)",
-            "rgb(255, 159, 64)",
-            "rgb(255, 205, 86)",
-            "rgb(75, 192, 192)",
-            "rgb(54, 162, 235)",
-            "rgb(153, 102, 255)",
-            "rgb(201, 203, 207)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-    },
+    options: { responsive: true },
+    phpLabels: [],
+    phpData: [],
   }),
+
+  created() {
+    this.getChartData();
+  },
+
+  methods: {
+    async getChartData() {
+      const response = await fetch(chartUrl, paramsFetch);
+      const text = await response.text();
+      if (!response.ok) throw Error(`ошибка ${response.status} ${text}`);
+      else if (text) {
+        const chartData = JSON.parse(text);
+        this.phpLabels = Object.keys(chartData.data);
+        this.phpData = Object.values(chartData.data);
+      }
+      setTimeout(() => {
+        this.getChartData();
+      }, timeout);
+    },
+  },
+
+  computed: {
+    chartData() {
+      return {
+        labels: this.phpLabels,
+        datasets: [
+          {
+            label: "ChartFirst",
+            data: this.phpData,
+            borderWidth: 1,
+          },
+        ],
+      };
+    },
+  },
 };
 </script>
